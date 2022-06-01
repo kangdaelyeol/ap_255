@@ -178,13 +178,22 @@ html {
 /* Section 4 */
 
 #section__4 {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	padding-top: 50vh;
+}
+
+#section__4 .section4-canvas{
+	background: gray;
 }
 .non-scroll-message__top,
 .non-scroll-message__bottom {
 	max-width: 1000px;
 	margin: 0 auto;
 	line-height: 1.5;
+	margin-bottom: 10vh;
 }
 
 .non-scroll-message__top strong {

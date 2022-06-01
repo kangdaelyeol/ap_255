@@ -5,6 +5,7 @@
 	const IMG_COUNT = {
 		scene1: 300,
 		scene2: 960,
+		scene4: 2,
 	};
 
 	const sceneArr = [
@@ -19,13 +20,9 @@
 				messageB: document.querySelector('#section__1 .main-message.b'),
 				messageC: document.querySelector('#section__1 .main-message.c'),
 				messageD: document.querySelector('#section__1 .main-message.d'),
-				canvas: document.querySelector(
-					'#section__1 .section__1-canvas'
-				),
+				canvas: document.querySelector('#section__1 .section__1-canvas'),
 				canvasContext: document
-					.querySelector(
-						'#section__1 .section__1-canvas'
-					)
+					.querySelector('#section__1 .section__1-canvas')
 					.getContext('2d'),
 			},
 			values: {
@@ -315,12 +312,36 @@
 			},
 		},
 		{
-			// Scene 4
+			// Scene 4 - sceneArr[3]
 			type: 'sticky',
 			heightSize: 0,
 			heightMultiple: 5,
 			objs: {
 				container: document.querySelector('#section__4'),
+				canvas: document.querySelector('#section__4 .section4-canvas'),
+				canvasContext: document
+					.querySelector('#section__4 .section4-canvas')
+					.getContext('2d'),
+			},
+			values: {
+				imgs: [],
+				// canvas Scroll fillRect_ratio
+				canvas_fill_left: [
+					0,
+					0,
+					{
+						start: 0,
+						end: 0,
+					},
+				],
+				canvas_fill_right: [
+					0,
+					0,
+					{
+						start: 0,
+						end: 0,
+					},
+				],
 			},
 		},
 	];
@@ -330,7 +351,7 @@
 	let prevSceneOffset = 0; // To check that which scene is on the screen
 	let currentScene = 0; // To check the size of each section;
 
-	const setHeight = () => {
+	const setSize = () => {
 		// setting the area of scrolling
 		for (let i = 0; i < sceneArr.length; i++) {
 			const sceneContainer = document.querySelector(`#section__${i + 1}`);
@@ -345,13 +366,64 @@
 
 		for (let i = 0; i < sceneArr.length; i++) {
 			pageHeight += sceneArr[i].heightSize;
-			console.log(scrollYOffset, pageHeight);
 			if (scrollYOffset < pageHeight) {
 				currentScene = i;
 				break;
 			}
 		}
 		document.body.setAttribute('id', `scene-show-${currentScene + 1}`);
+
+		// Section4-canvas resizing
+		// The canvasHeight size should be same size as the documentHeight.
+		// and the canvasWidth size must be greater than the width size of the document.
+		const reScaledWidth = document.body.offsetWidth / sceneArr[3].objs.canvas.width;
+		const reScaledHeight = document.body.offsetHeight / sceneArr[3].objs.canvas.height;
+
+		let reScaledRatio;
+		// if the Canvas is more flat than the browser (usually) => fit with height
+		if(reScaledWidth <= reScaledHeight)
+		reScaledRatio = reScaledHeight;
+		else
+		// If the Canvas is more thinner than the browser (rarely) => fit with width
+		reScaledRatio = reScaledWidth;
+		sceneArr[3].objs.canvas.style.transform = `scale(${reScaledRatio})`;
+		
+		// deciding the re_scaled width, height size of canvas
+
+		const reSizedWidth = sceneArr[3].objs.canvas.width * reScaledRatio;
+		const reSizedHeight = sceneArr[3].objs.canvas.height * reScaledRatio;
+
+		// To Do list
+		// I have to output the relative X_POS-value of canvas_rect_fill with the browser view-port.
+
+		// canvasRectDraw
+		const canvasScaledXPos =
+			(sceneArr[3].objs.canvas.width * canvasWidthRatio) / 2;
+
+		const can_effect_st_ratio =
+			sceneArr[3].objs.canvas.offsetTop / sceneArr[3].heightSize / 2;
+		const can_effect_end_ratio =
+			sceneArr[3].objs.canvas.offsetTop / sceneArr[3].heightSize;
+
+		const can_leftSQ_startX = canvasScaledXPos + hideSize;
+		const can_leftSQ_endX = canvasScaledXPos;
+
+		const can_rightSQ_startX =
+			canvasScaledXPos + document.body.offsetWidth - hideSize;
+		const can_rightSQ_endX = canvasScaledXPos + document.body.offsetWidth;
+
+		// Setting canvas_fillRect_ratio
+		sceneArr[3].values.canvas_fill_left[0] = can_leftSQ_startX;
+		sceneArr[3].values.canvas_fill_left[1] = can_leftSQ_endX;
+
+		sceneArr[3].values.canvas_fill_right[0] = can_rightSQ_startX;
+		sceneArr[3].values.canvas_fill_right[1] = can_rightSQ_endX;
+
+		sceneArr[3].values.canvas_fill_left[2].start =
+			sceneArr[3].values.canvas_fill_right[2].start = can_effect_st_ratio;
+		sceneArr[3].values.canvas_fill_left[2].end =
+			sceneArr[3].values.canvas_fill_right[2].end = can_effect_end_ratio;
+			console.log(sceneArr[3].values.canvas_fill_right[2]);
 	};
 
 	const getCurrentSceneRatio = (currentScene) => {
@@ -489,8 +561,7 @@
 				break;
 			case 1: // Scene 2
 				break;
-			case 2:  // Scene 3
-
+			case 2: // Scene 3
 				// messageM
 				if (currentSceneRatio <= 0.2) {
 					C_objs.messageM.style.opacity = getContextValue(
@@ -513,53 +584,77 @@
 				}
 
 				// messageA
-				if(currentSceneRatio <= 0.5) {
+				if (currentSceneRatio <= 0.5) {
 					C_objs.messageA.style.opacity = getContextValue(
 						currentSceneRatio,
 						C_value.messageA__opacity__in
 					);
-					C_objs.messageA.style.transform = `translate3d(0, ${getContextValue(currentSceneRatio,
-						C_value.messageA__translateY__in)}px , 0)`;
+					C_objs.messageA.style.transform = `translate3d(0, ${getContextValue(
+						currentSceneRatio,
+						C_value.messageA__translateY__in
+					)}px , 0)`;
 				} else {
 					C_objs.messageA.style.opacity = getContextValue(
 						currentSceneRatio,
 						C_value.messageA__opacity__out
 					);
-					C_objs.messageA.style.transform = `translate3d(0, ${getContextValue(currentSceneRatio,
-						C_value.messageA__translateY__out)}px , 0)`;
+					C_objs.messageA.style.transform = `translate3d(0, ${getContextValue(
+						currentSceneRatio,
+						C_value.messageA__translateY__out
+					)}px , 0)`;
 				}
 
 				// messageB
-				if(currentSceneRatio <= 0.8) {
+				if (currentSceneRatio <= 0.8) {
 					C_objs.messageB.style.opacity = getContextValue(
 						currentSceneRatio,
 						C_value.messageB__opacity__in
 					);
-					C_objs.messageB.style.transform = `translate3d(0, ${getContextValue(currentSceneRatio,
-						C_value.messageB__translateY__in)}px , 0)`;
+					C_objs.messageB.style.transform = `translate3d(0, ${getContextValue(
+						currentSceneRatio,
+						C_value.messageB__translateY__in
+					)}px , 0)`;
 				} else {
 					C_objs.messageB.style.opacity = getContextValue(
 						currentSceneRatio,
 						C_value.messageB__opacity__out
 					);
-					C_objs.messageB.style.transform = `translate3d(0, ${getContextValue(currentSceneRatio,
-						C_value.messageB__translateY__out)}px , 0)`;
-				};
-				
+					C_objs.messageB.style.transform = `translate3d(0, ${getContextValue(
+						currentSceneRatio,
+						C_value.messageB__translateY__out
+					)}px , 0)`;
+				}
+
 				// Canvas
 
-				if(currentSceneRatio <= 0.5) {
-					C_objs.canvas.style.opacity = getContextValue(currentSceneRatio, C_value.canvas__opacity__in);
+				if (currentSceneRatio <= 0.5) {
+					C_objs.canvas.style.opacity = getContextValue(
+						currentSceneRatio,
+						C_value.canvas__opacity__in
+					);
 				} else {
-					C_objs.canvas.style.opacity = getContextValue(currentSceneRatio, C_value.canvas__opacity__out);
+					C_objs.canvas.style.opacity = getContextValue(
+						currentSceneRatio,
+						C_value.canvas__opacity__out
+					);
 				}
 
 				let imgIndex__3 = Math.round(currentSceneRatio * IMG_COUNT.scene2 - 1);
-				if(imgIndex__3 < 0) imgIndex__3 = 0;
-				else if(imgIndex__3 > IMG_COUNT.scene2 - 1) imgIndex__3 = IMG_COUNT.scene2 - 1;
+				if (imgIndex__3 < 0) imgIndex__3 = 0;
+				else if (imgIndex__3 > IMG_COUNT.scene2 - 1)
+					imgIndex__3 = IMG_COUNT.scene2 - 1;
 				C_objs.canvasContext.drawImage(C_value.imgs[imgIndex__3], 0, 0);
 				break;
-			case 3:
+			case 3: // Scene 4
+				// Canvas fillRect_effect
+				C_objs.canvasContext.drawImage(C_value.imgs[0], 0, 0);
+				C_objs.canvasContext.fillRect(
+					0,
+					0,
+					getContextValue(currentSceneRatio, C_value.canvas_fill_left),
+					sceneArr[3].objs.canvas.height
+				);
+				console.log(getContextValue(currentSceneRatio, C_value.canvas_fill_left))
 				break;
 			default:
 				console.log('playAnimation__switchError');
@@ -610,16 +705,23 @@
 			imgElem.src = `./video/002/IMG_${7027 + i}.JPG`;
 			sceneArr[2].values.imgs.push(imgElem);
 		}
+		// Scene 4: blend Image
+		for (let i = 0; i < IMG_COUNT.scene4; i++) {
+			const imgElem = new Image();
+			imgElem.src = `./images/blend_img_${i + 1}.jpeg`;
+			sceneArr[3].values.imgs.push(imgElem);
+		}
 	};
 
-	setHeight();
+	setSize();
 	loadImage();
-	window.addEventListener('resize', setHeight);
+	window.addEventListener('resize', setSize);
 	window.addEventListener('load', () => {
 		console.log(sceneArr[2].values.imgs);
-		setHeight();
+		setSize();
 		sceneCheck();
 		playAnimation();
+		sceneArr[3].objs.canvasContext.fillStyle = 'white';
 	});
 	window.addEventListener('scroll', () => {
 		sceneCheck();
