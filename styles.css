@@ -7,6 +7,8 @@
 	left: 0;
 }
 
+
+
 .canvas-elem{
 	position: fixed;
 	height: 100vh;
@@ -183,11 +185,9 @@ html {
 	flex-direction: column;
 	align-items: center;
 	padding-top: 50vh;
+	margin: 0 auto;
 }
 
-#section__4 .section4-canvas{
-	background: gray;
-}
 .non-scroll-message__top,
 .non-scroll-message__bottom {
 	max-width: 1000px;
@@ -212,6 +212,18 @@ html {
 	color: rgba(0, 0, 0, 0.5);
 }
 
+.section4_fixed {
+	position: fixed;
+}
+
+.sticky-nav {
+	position: fixed;
+	top:0;
+	background: rgba(255, 255, 255, 0,1);
+	backdrop-filter: saturate(180%) blur(15px);
+	z-index: 2;
+}
+
 
 body#scene-show-1 #section__1 .sticky-elem,
 body#scene-show-2 #section__2 .sticky-elem,
@@ -222,7 +234,7 @@ body#scene-show-4 #section__4 .sticky-elem{
 
 /* Media Query */
 
-@media screen and (max-width: 1000px) {
+@media screen and (max-width: 1024px) {
 	.global-nav,
 	.local-nav {
 		padding: 0 1rem;
@@ -263,7 +275,10 @@ body#scene-show-4 #section__4 .sticky-elem{
 	/* Section 4 */
 	.non-scroll-message__bottom,
 	.non-scroll-message__top {
-		padding: 0 1rem;
+		padding: 0 3rem;
+	}
+	.non-scroll-message__bottom {
+		margin-top: 10vh;
 	}
 	.non-scroll-message__top strong {
 		font-size: 2.3rem;
@@ -273,8 +288,4 @@ body#scene-show-4 #section__4 .sticky-elem{
 		font-size: 1.7rem;
 		line-height: 1.4;
 	}
-}
-
-section {
-	border: 3px solid red;
 }
