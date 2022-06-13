@@ -86,8 +86,10 @@ html {
 .n_sticky__message {
 	position: absolute;
 	font-weight: bold;
-	font-size: 9vw;
-	top: 30vh;
+	font-size: 8vw;
+	top: 50vh;
+	left: 50vw;
+	transform: translate3d(-50%, -50%, 0);
 }
 
 .sticky__message {
@@ -177,6 +179,30 @@ html {
 	text-align: center;
 	line-height: 6rem;
 }
+
+
+#section__3 .main-message.m{
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	top: 45vh;
+	left: 24vw;
+}
+
+#section__3 .main-message.m small, 
+#section__3 .main-message.m strong{
+	display: block;
+}
+
+#section__3 .main-message.a{
+	top: 30vh;
+	left: 60vw;
+}
+#section__3 .main-message.b{
+	top: 40vh;
+	left: 50vw;
+}
+
 /* Section 4 */
 
 #section__4 {
@@ -271,6 +297,7 @@ body#scene-show-4 #section__4 .sticky-elem{
 	.sticky__sub {
 		max-width: 14rem;
 	}
+
 
 	/* Section 4 */
 	.non-scroll-message__bottom,

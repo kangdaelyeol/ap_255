@@ -2,16 +2,6 @@
 (() => {
 	// amount of img have to be decied previously.
 
-	const tem_elem = document.querySelector(".tem_elem");
-	tem_elem.style.position = "fixed";
-	tem_elem.style.top = tem_elem.style.left = 0;
-	tem_elem.style.width = tem_elem.style.height = "100px";
-	tem_elem.style.border = '2px solid black';
-	tem_elem.style.zIndex= "54";
-	tem_elem.style.fontWeight = "bold";
-	tem_elem.style.color = "red";
-
-
 	const IMG_COUNT = {
 		scene1: 300,
 		scene2: 960,
@@ -363,23 +353,28 @@
 						end: 0,
 					},
 				],
+				canvas_blend_ypos: [
+					0,
+					0,
+					{
+						start: 0,
+						end: 0,
+					},
+				],
 				canvas_scale_effect: [
 					0,
 					0,
 					{
 						start: 0,
-						end: 0
-					}
+						end: 0,
+					},
 				],
-				caption_opacity:[
-					0, 1 ,{start : 0, end: 0}
-				],
-				caption_translateY:[
-					20, -100 ,{start: 0, end: 0}
-				],
+				caption_opacity: [0, 1, { start: 0, end: 0 }],
+				caption_translateY: [20, -100, { start: 0, end: 0 }],
 				canvas_fill_rect: 0,
 				canvas_blend_top: 0,
-				canvas_margin_top:0
+				canvas_margin_top: 0,
+				canvas_rect_space: 0,
 			},
 		},
 	];
@@ -388,21 +383,26 @@
 
 	let prevSceneOffset = 0; // To check that which scene is on the screen
 	let currentScene = 0; // To check the size of each section;
+	let rafId = 0;
+	let rafSt = false;
+	let fixedOffsetY = 0;
+
 
 	const checkMenu = () => {
 		let scrollYOffset = window.scrollY;
 
 		// Local_nav -> fixed effect
 		const local_nav = document.querySelector('.container .local-nav');
-		if(scrollYOffset > 44) {
-			local_nav.classList.add("sticky-nav");
+		if (scrollYOffset > 44) {
+			local_nav.classList.add('sticky-nav');
 		} else {
-			local_nav.classList.remove("sticky-nav");
+			local_nav.classList.remove('sticky-nav');
 		}
-	}
+	};
 
 	const setSize = () => {
 		// setting the area of scrolling
+		fixedOffsetY = scrollY;
 		for (let i = 0; i < sceneArr.length; i++) {
 			const sceneContainer = document.querySelector(`#section__${i + 1}`);
 			sceneArr[i].heightSize = window.innerHeight * sceneArr[i].heightMultiple;
@@ -412,6 +412,7 @@
 
 		let scrollYOffset = window.scrollY;
 		let pageHeight = 0;
+
 
 		for (let i = 0; i < sceneArr.length; i++) {
 			pageHeight += sceneArr[i].heightSize;
@@ -435,7 +436,6 @@
 		// If the Canvas is more thinner than the browser (rarely) => fit with width
 		else reScaledRatio = reScaledWidth;
 		sceneArr[3].objs.canvas.style.transform = `scale(${reScaledRatio})`;
-		tem_elem.innerHTML = reScaledRatio;
 
 		// deciding the re_scaled width, height size of canvas
 		// to match the value as re_sized 'canvas - width/height'
@@ -450,18 +450,23 @@
 		const reSizedViewWidth = document.body.offsetWidth / reScaledRatio;
 		const reSizedViewHeight = window.innerHeight / reScaledRatio;
 
-		const reSizedSpace_W = sceneArr[3].objs.canvas.width - sceneArr[3].objs.canvas.width * reScaledRatio;
-		const reSizedSpace_H = sceneArr[3].objs.canvas.height - sceneArr[3].objs.canvas.height * reScaledRatio;
+		const reSizedSpace_W =
+			sceneArr[3].objs.canvas.width -
+			sceneArr[3].objs.canvas.width * reScaledRatio;
+		const reSizedSpace_H =
+			sceneArr[3].objs.canvas.height -
+			sceneArr[3].objs.canvas.height * reScaledRatio;
 
 		sceneArr[3].values.reSizedSpace_H = reSizedSpace_H / 2;
 		// the scaleRatio should be lower more than 1
 
-		const canvasOffY =
-			sceneArr[3].objs.canvas.offsetTop + reSizedSpace_H / 2;
+		const canvasOffY = sceneArr[3].objs.canvas.offsetTop + reSizedSpace_H / 2;
 
 		// Viewport: Height -> innerHeight / Width -> body.offsetWidth
 
 		const hiddenSqSize = (sceneArr[3].objs.canvas.width - reSizedViewWidth) / 2;
+
+		sceneArr[3].values.hiddenSqSize = hiddenSqSize;
 		const blockedSqSize = reSizedViewWidth / 5;
 
 		const can_effect_st_ratio = canvasOffY / 2 / sceneArr[3].heightSize;
@@ -485,8 +490,7 @@
 		sceneArr[3].values.canvas_fill_left[2].end =
 			sceneArr[3].values.canvas_fill_right[2].end = can_effect_end_ratio;
 
-		// blending the next IMG
-
+		// Canvas_blend_effect -------------------------------------------------------
 		const nextImg_effect_start_ratio = can_effect_end_ratio;
 		const nextImg_effect_end_ratio =
 			nextImg_effect_start_ratio + window.innerHeight / sceneArr[3].heightSize;
@@ -509,30 +513,37 @@
 		sceneArr[3].values.canvas_next_ypos[2].start = nextImg_effect_start_ratio;
 		sceneArr[3].values.canvas_next_ypos[2].end = nextImg_effect_end_ratio;
 
+		sceneArr[3].values.canvas_blend_ypos[0] = sceneArr[3].values.imgs[1].height;
+		sceneArr[3].values.canvas_blend_ypos[1] = 0
+		sceneArr[3].values.canvas_blend_ypos[2].start = nextImg_effect_start_ratio;
+		sceneArr[3].values.canvas_blend_ypos[2].end = nextImg_effect_end_ratio;
 
-		// Canvas_scale_effect - Start
+		// Canvas_scale_effect -------------------------------------------------------
 		const canvas_start_scale = reScaledRatio;
 		const canvas_end_scale = canvas_start_scale / 2;
 
 		const canvas_scale_start = nextImg_effect_end_ratio;
-		const canvas_scale_end = canvas_scale_start + 0.1;
-		
+		const canvas_scale_end = canvas_scale_start + 0.2;
+
 		sceneArr[3].values.canvas_scale_effect[0] = canvas_start_scale;
 		sceneArr[3].values.canvas_scale_effect[1] = canvas_end_scale;
 		sceneArr[3].values.canvas_scale_effect[2].start = canvas_scale_start;
 		sceneArr[3].values.canvas_scale_effect[2].end = canvas_scale_end;
 		// Canvas_scale_effect - End
 
-		// Canvas_after_scale - Start
-		const fixed_scroll_ypos = (canvas_scale_end - can_effect_end_ratio) * sceneArr[3].heightSize;
+		// Canvas_after_scale -----------------------------------------
+		const fixed_scroll_ypos =
+			(canvas_scale_end - can_effect_end_ratio) * sceneArr[3].heightSize;
 		sceneArr[3].values.canvas_margin_top = fixed_scroll_ypos;
 		// Canvas_after_scle - end
 
-		// Caption(translateY, opacity) effect - start
+		// Caption(translateY, opacity) effect -------------------------------
 		const caption_start = canvas_scale_end;
 		const caption_end = caption_start + 0.05;
-		sceneArr[3].values.caption_opacity[2].start = sceneArr[3].values.caption_translateY[2].start = caption_start;
-		sceneArr[3].values.caption_opacity[2].end = sceneArr[3].values.caption_translateY[2].end = caption_end;
+		sceneArr[3].values.caption_opacity[2].start =
+			sceneArr[3].values.caption_translateY[2].start = caption_start;
+		sceneArr[3].values.caption_opacity[2].end =
+			sceneArr[3].values.caption_translateY[2].end = caption_end;
 		// Caption(translateY, opacity) effect - end
 	};
 
@@ -540,6 +551,12 @@
 		const sceneHeight = sceneArr[currentScene].heightSize;
 		return currentSceneScrollY / sceneHeight;
 	};
+
+	const getCurrentfixedRatio = (currentScene) => {
+		const sceneHeight = sceneArr[currentScene].heightSize;
+		return (fixedOffsetY - prevSceneOffset) / sceneHeight;
+	};
+
 
 	const getContextValue = (sceneRatio, values) => {
 		if (values.length === 3) {
@@ -661,13 +678,7 @@
 						C_value.canvas__opacity__out
 					);
 				}
-				// the index of Image to be showed now
-				let imgIndex = Math.round(currentSceneRatio * IMG_COUNT.scene1 - 1);
-				// To prevent to exceed refering index
-				if (imgIndex < 0) imgIndex = 0;
-				else if (imgIndex > IMG_COUNT.scene1 - 1)
-					imgIndex = IMG_COUNT.scene1 - 1;
-				C_objs.canvasContext.drawImage(C_value.imgs[imgIndex], 0, 0);
+				
 				break;
 			case 1: // Scene 2
 				break;
@@ -748,19 +759,24 @@
 						C_value.canvas__opacity__out
 					);
 				}
-
-				let imgIndex__3 = Math.round(currentSceneRatio * IMG_COUNT.scene2 - 1);
-				if (imgIndex__3 < 0) imgIndex__3 = 0;
-				else if (imgIndex__3 > IMG_COUNT.scene2 - 1)
-					imgIndex__3 = IMG_COUNT.scene2 - 1;
-				C_objs.canvasContext.drawImage(C_value.imgs[imgIndex__3], 0, 0);
 				break;
 
 			case 3: // Scene 4
+				// drawImage(src, sx, sy, sw, sh, dx, dy, dw, dy)
 				C_objs.canvasContext.fillStyle = 'white';
 				if (currentSceneRatio < C_value.img_swap_point) {
-					C_objs.canvas.classList.remove("section4_fixed");
-					C_objs.canvasContext.drawImage(C_value.imgs[0], 0, 0);
+					C_objs.canvas.classList.remove('section4_fixed');
+					C_objs.canvasContext.drawImage(
+						C_value.imgs[0],
+						0,
+						0,
+						C_value.imgs[0].width,
+						C_value.imgs[0].height,
+						0,
+						0,
+						C_objs.canvas.width,
+						C_objs.canvas.height
+					);
 					C_objs.canvasContext.fillRect(
 						getContextValue(currentSceneRatio, C_value.canvas_fill_left),
 						0,
@@ -773,50 +789,72 @@
 						C_value.rect_size_W,
 						C_value.rect_size_H
 					);
-				} else if(currentSceneRatio <= C_value.canvas_scale_effect[2].end) {
+				} else if (currentSceneRatio <= C_value.canvas_scale_effect[2].end) {
 					//Canvas_blend_effect
-					C_objs.canvas.classList.add("section4_fixed");
+					C_objs.canvas.classList.add('section4_fixed');
 					C_objs.canvas.style.top = `-${C_value.reSizedSpace_H}px`;
 
-					C_objs.canvasContext.drawImage(C_value.imgs[0], 0, 0);
 					C_objs.canvasContext.drawImage(
-						C_value.imgs[1],
-						0, // sX
-						getContextValue(currentSceneRatio, C_value.canvas_next_ypos), // sy
-						C_value.canvas_fill_rect, //sw
-						C_value.rect_size_H - //sh
-							getContextValue(currentSceneRatio, C_value.canvas_next_ypos),
+						C_value.imgs[0],
 						0,
-						getContextValue(currentSceneRatio, C_value.canvas_next_ypos),
-						C_value.canvas_fill_rect,
-						C_value.rect_size_H -
-							getContextValue(currentSceneRatio, C_value.canvas_next_ypos)
+						0,
+						C_value.imgs[0].width,
+						C_value.imgs[0].height,
+						0, // dx
+						0, // dy
+						C_objs.canvas.width, // dw
+						C_objs.canvas.height // dh
 					);
 
-					// Canvas_scale_effect
-					if(currentSceneRatio >= C_value.canvas_scale_effect[2].start && currentSceneRatio <= C_value.canvas_scale_effect[2].end) {
-						C_objs.canvas.style.transform = `scale(${getContextValue(currentSceneRatio, C_value.canvas_scale_effect)})`;
-					};
+					// blendImg draw
+					C_objs.canvasContext.drawImage(
+						C_value.imgs[1],
+						0, // sx
+						getContextValue(currentSceneRatio, C_value.canvas_blend_ypos), // sy
+						C_value.imgs[1].width, //sw
+						C_value.imgs[1].height - 
+							getContextValue(currentSceneRatio, C_value.canvas_blend_ypos), // sh
+						0, // dx
+						getContextValue(currentSceneRatio, C_value.canvas_next_ypos), //dy
+						C_objs.canvas.width, // dw
+						C_objs.canvas.height -
+							getContextValue(currentSceneRatio, C_value.canvas_next_ypos) // dh
+					);
+				
 
-					
+					// Canvas_scale_effect
+					if (
+						currentSceneRatio >= C_value.canvas_scale_effect[2].start &&
+						currentSceneRatio <= C_value.canvas_scale_effect[2].end
+					) {
+						C_objs.canvas.style.transform = `scale(${getContextValue(
+							currentSceneRatio,
+							C_value.canvas_scale_effect
+						)})`;
+					}
 				}
 				// Canvas marginTop effect
-				if(currentSceneRatio > C_value.canvas_scale_effect[2].end){
+				if (currentSceneRatio > C_value.canvas_scale_effect[2].end) {
 					C_objs.canvas.style.marginTop = `${C_value.canvas_margin_top}px`;
-					C_objs.canvas.classList.remove("section4_fixed");
+					C_objs.canvas.classList.remove('section4_fixed');
 				} else {
 					C_objs.canvas.style.marginTop = 0;
 				}
 
 				// Caption(translateY, opacity) effect
-				if(currentSceneRatio >= C_value.canvas_scale_effect[2].end){
-					C_objs.caption.style.opacity = `${getContextValue(currentSceneRatio, C_value.caption_opacity)}`;
-					C_objs.caption.style.transform = `translate3d(0, ${getContextValue(currentSceneRatio, C_value.caption_translateY)}px, 0)`;
+				if (currentSceneRatio >= C_value.canvas_scale_effect[2].end) {
+					C_objs.caption.style.opacity = `${getContextValue(
+						currentSceneRatio,
+						C_value.caption_opacity
+					)}`;
+					C_objs.caption.style.transform = `translate3d(0, ${getContextValue(
+						currentSceneRatio,
+						C_value.caption_translateY
+					)}px, 0)`;
+				} else {
+					C_objs.caption.style.opacity = 0;
 				}
-				else {
-					C_objs.caption.style.opacity= 0;
-				}
-					break;
+				break;
 			default:
 				console.log('playAnimation__switchError');
 		}
@@ -832,22 +870,22 @@
 		}
 
 		// scrollY 값이 current scene height 값보다 클 때 scene이 이동했다는 의미 -> currentscene++
-		if (scrollYOffset > prevSceneOffset + sceneArr[currentScene].heightSize) {
+		if (Math.round(fixedOffsetY) > prevSceneOffset + sceneArr[currentScene].heightSize) {
 			currentScene++;
 			document.body.setAttribute('id', `scene-show-${currentScene + 1}`);
 			return;
 		}
 
-		if (scrollYOffset < prevSceneOffset) {
+		if (Math.round(fixedOffsetY) < prevSceneOffset) {
 			// To prevent to the Bound effect from the mobile browser.
-			if (scrollYOffset === 0) return;
+			if (Math.round(fixedOffsetY) === 0) return;
 
 			currentScene--;
 			document.body.setAttribute('id', `scene-show-${currentScene + 1}`);
 			return;
 		}
 
-		currentSceneScrollY = scrollYOffset - prevSceneOffset;
+		currentSceneScrollY = scrollY - prevSceneOffset;
 		//  console.log(currentScene, currentSceneScrollY)
 
 		playAnimation();
@@ -874,7 +912,48 @@
 		}
 	};
 
-	setSize();
+
+	const loop = () => {
+		const threshold = 0.1;
+		const calibratedOffset = scrollY - fixedOffsetY;
+		fixedOffsetY += calibratedOffset * threshold;
+		if(Math.abs(calibratedOffset) < 1){
+			cancelAnimationFrame(rafId);
+			rafSt = false;
+		} else {
+			rafSt = true;
+			// Drawing Img
+			
+			let currentFixedOffsetRatio = 0;
+			// Section 1
+			if(currentScene === 0){
+				currentFixedOffsetRatio = getCurrentfixedRatio(currentScene);
+				// the index of Image to be showed now
+				console.log(currentFixedOffsetRatio);
+				let imgIndex = Math.round(currentFixedOffsetRatio * IMG_COUNT.scene1 - 1);
+				// To prevent to exceed refering index
+				if (imgIndex < 0) imgIndex = 0;
+				else if (imgIndex > IMG_COUNT.scene1 - 1)
+					imgIndex = IMG_COUNT.scene1 - 1;
+				sceneArr[0].objs.canvasContext.drawImage(sceneArr[0].values.imgs[imgIndex], 0, 0);
+			
+				// Section 2
+			} else if (currentScene === 2){
+				currentFixedOffsetRatio = getCurrentfixedRatio(currentScene);
+				console.log(currentFixedOffsetRatio);
+				let imgIndex__3 = Math.round(currentFixedOffsetRatio * IMG_COUNT.scene2 - 1);
+				if (imgIndex__3 < 0) imgIndex__3 = 0;
+				else if (imgIndex__3 > IMG_COUNT.scene2 - 1)
+					imgIndex__3 = IMG_COUNT.scene2 - 1;
+				sceneArr[2].objs.canvasContext.drawImage(sceneArr[2].values.imgs[imgIndex__3], 0, 0);
+			}
+			
+
+			rafId = requestAnimationFrame(loop);
+		} 
+	}
+	
+
 	loadImage();
 	window.addEventListener('resize', () => {
 		setSize();
@@ -885,7 +964,11 @@
 		sceneCheck();
 	});
 	window.addEventListener('scroll', () => {
+		if(!rafSt){
+			rafId = requestAnimationFrame(loop);
+		}
 		sceneCheck();
 		checkMenu();
 	});
 })();
+	
