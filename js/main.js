@@ -7,6 +7,7 @@
 		scene2: 960,
 		scene4: 2,
 	};
+	let currentSceneScrollY = 0;
 
 	const sceneArr = [
 		// Scene 1
@@ -387,7 +388,6 @@
 	let rafSt = false;
 	let fixedOffsetY = 0;
 
-
 	const checkMenu = () => {
 		let scrollYOffset = window.scrollY;
 
@@ -412,7 +412,6 @@
 
 		let scrollYOffset = window.scrollY;
 		let pageHeight = 0;
-
 
 		for (let i = 0; i < sceneArr.length; i++) {
 			pageHeight += sceneArr[i].heightSize;
@@ -514,7 +513,7 @@
 		sceneArr[3].values.canvas_next_ypos[2].end = nextImg_effect_end_ratio;
 
 		sceneArr[3].values.canvas_blend_ypos[0] = sceneArr[3].values.imgs[1].height;
-		sceneArr[3].values.canvas_blend_ypos[1] = 0
+		sceneArr[3].values.canvas_blend_ypos[1] = 0;
 		sceneArr[3].values.canvas_blend_ypos[2].start = nextImg_effect_start_ratio;
 		sceneArr[3].values.canvas_blend_ypos[2].end = nextImg_effect_end_ratio;
 
@@ -553,10 +552,11 @@
 	};
 
 	const getCurrentfixedRatio = (currentScene) => {
+		// prevSceneOffset -> something wrong
+		console.log(currentScene, fixedOffsetY, prevSceneOffset);
 		const sceneHeight = sceneArr[currentScene].heightSize;
 		return (fixedOffsetY - prevSceneOffset) / sceneHeight;
 	};
-
 
 	const getContextValue = (sceneRatio, values) => {
 		if (values.length === 3) {
@@ -678,7 +678,7 @@
 						C_value.canvas__opacity__out
 					);
 				}
-				
+
 				break;
 			case 1: // Scene 2
 				break;
@@ -812,7 +812,7 @@
 						0, // sx
 						getContextValue(currentSceneRatio, C_value.canvas_blend_ypos), // sy
 						C_value.imgs[1].width, //sw
-						C_value.imgs[1].height - 
+						C_value.imgs[1].height -
 							getContextValue(currentSceneRatio, C_value.canvas_blend_ypos), // sh
 						0, // dx
 						getContextValue(currentSceneRatio, C_value.canvas_next_ypos), //dy
@@ -820,7 +820,6 @@
 						C_objs.canvas.height -
 							getContextValue(currentSceneRatio, C_value.canvas_next_ypos) // dh
 					);
-				
 
 					// Canvas_scale_effect
 					if (
@@ -867,31 +866,41 @@
 		// This is because each area has a different height size.
 		for (let i = 0; i < currentScene; i++) {
 			prevSceneOffset += sceneArr[i].heightSize;
+			console.log(sceneArr[i].heightSize);
 		}
+		// console.log(fixedOffsetY);
 
 		// scrollY 값이 current scene height 값보다 클 때 scene이 이동했다는 의미 -> currentscene++
-		if (Math.round(fixedOffsetY) > prevSceneOffset + sceneArr[currentScene].heightSize) {
+		if (
+			Math.round(fixedOffsetY) >
+			prevSceneOffset + sceneArr[currentScene].heightSize
+		) {
 			currentScene++;
 			document.body.setAttribute('id', `scene-show-${currentScene + 1}`);
+			rafSt = false;
+			cancelAnimationFrame(rafId);
 			return;
 		}
 
 		if (Math.round(fixedOffsetY) < prevSceneOffset) {
 			// To prevent to the Bound effect from the mobile browser.
+			// console.log(fixedOffsetY);
 			if (Math.round(fixedOffsetY) === 0) return;
 
 			currentScene--;
 			document.body.setAttribute('id', `scene-show-${currentScene + 1}`);
+			rafSt = false;
+			cancelAnimationFrame(rafId);
 			return;
 		}
-
 		currentSceneScrollY = scrollY - prevSceneOffset;
-		//  console.log(currentScene, currentSceneScrollY)
-
+		//  console.log(currentSceneScrollY)
 		playAnimation();
+		rafId = requestAnimationFrame(loop);
 	};
 
 	const loadImage = () => {
+		console.log('img_loading');
 		// Scene 1: 300
 		for (let i = 0; i < IMG_COUNT.scene1; i++) {
 			const imgElem = new Image();
@@ -912,63 +921,113 @@
 		}
 	};
 
-
 	const loop = () => {
 		const threshold = 0.1;
 		const calibratedOffset = scrollY - fixedOffsetY;
 		fixedOffsetY += calibratedOffset * threshold;
-		if(Math.abs(calibratedOffset) < 1){
+		if (Math.abs(calibratedOffset) < 1) {
 			cancelAnimationFrame(rafId);
 			rafSt = false;
 		} else {
 			rafSt = true;
 			// Drawing Img
-			
+			sceneCheck();
 			let currentFixedOffsetRatio = 0;
 			// Section 1
-			if(currentScene === 0){
+			if (currentScene === 0) {
 				currentFixedOffsetRatio = getCurrentfixedRatio(currentScene);
 				// the index of Image to be showed now
-				console.log(currentFixedOffsetRatio);
-				let imgIndex = Math.round(currentFixedOffsetRatio * IMG_COUNT.scene1 - 1);
+				let imgIndex = Math.round(
+					currentFixedOffsetRatio * IMG_COUNT.scene1 - 1
+				);
 				// To prevent to exceed refering index
 				if (imgIndex < 0) imgIndex = 0;
 				else if (imgIndex > IMG_COUNT.scene1 - 1)
 					imgIndex = IMG_COUNT.scene1 - 1;
-				sceneArr[0].objs.canvasContext.drawImage(sceneArr[0].values.imgs[imgIndex], 0, 0);
-			
+				sceneArr[0].objs.canvasContext.drawImage(
+					sceneArr[0].values.imgs[imgIndex],
+					0,
+					0
+				);
+
 				// Section 2
-			} else if (currentScene === 2){
+			} else if (currentScene === 2) {
+				let prevSceneScroll = 0;
+				for (let i = 0; i < 2; i++) {
+					prevSceneScroll += sceneArr[i].heightSize;
+				}
 				currentFixedOffsetRatio = getCurrentfixedRatio(currentScene);
-				console.log(currentFixedOffsetRatio);
-				let imgIndex__3 = Math.round(currentFixedOffsetRatio * IMG_COUNT.scene2 - 1);
+				let imgIndex__3 = Math.round(
+					currentFixedOffsetRatio * IMG_COUNT.scene2 - 1
+				);
 				if (imgIndex__3 < 0) imgIndex__3 = 0;
 				else if (imgIndex__3 > IMG_COUNT.scene2 - 1)
 					imgIndex__3 = IMG_COUNT.scene2 - 1;
-				sceneArr[2].objs.canvasContext.drawImage(sceneArr[2].values.imgs[imgIndex__3], 0, 0);
+				sceneArr[2].objs.canvasContext.drawImage(
+					sceneArr[2].values.imgs[imgIndex__3],
+					0,
+					0
+				);
 			}
-			
+		}
+	};
+	const drawInitImage = () => {
+		let currentFixedOffsetRatio = 0;
+		if (currentScene === 0) {
+			currentFixedOffsetRatio = getCurrentfixedRatio(currentScene);
+			// the index of Image to be showed now
+			let imgIndex = Math.round(currentFixedOffsetRatio * IMG_COUNT.scene1 - 1);
+			// To prevent to exceed refering index
+			if (imgIndex < 0) imgIndex = 0;
+			else if (imgIndex > IMG_COUNT.scene1 - 1) imgIndex = IMG_COUNT.scene1 - 1;
+			sceneArr[0].objs.canvasContext.drawImage(
+				sceneArr[0].values.imgs[imgIndex],
+				0,
+				0
+			);
 
-			rafId = requestAnimationFrame(loop);
-		} 
-	}
-	
+			// Section 2
+		} else if (currentScene === 2) {
+			currentFixedOffsetRatio = getCurrentfixedRatio(currentScene);
+			let imgIndex__3 = Math.round(
+				currentFixedOffsetRatio * IMG_COUNT.scene2 - 1
+			);
+			if (imgIndex__3 < 0) imgIndex__3 = 0;
+			else if (imgIndex__3 > IMG_COUNT.scene2 - 1)
+				imgIndex__3 = IMG_COUNT.scene2 - 1;
+			sceneArr[2].objs.canvasContext.drawImage(
+				sceneArr[2].values.imgs[imgIndex__3],
+				0,
+				0
+			);
+		}
+	};
 
 	loadImage();
-	window.addEventListener('resize', () => {
-		setSize();
-		sceneCheck();
-	});
+
 	window.addEventListener('load', () => {
+		document.body.classList.remove('before-loaded');
+		// after the Image is loaded, adding the Events to the page.
+
+		window.addEventListener('resize', () => {
+			setSize();
+			sceneCheck();
+		});
+
+		window.addEventListener('scroll', () => {
+			// console.log("scroll");
+			checkMenu();
+			if (!rafSt) {
+				rafId = requestAnimationFrame(loop);
+			}
+		});
+
 		setSize();
 		sceneCheck();
+		drawInitImage();
 	});
-	window.addEventListener('scroll', () => {
-		if(!rafSt){
-			rafId = requestAnimationFrame(loop);
-		}
-		sceneCheck();
-		checkMenu();
+
+	document.querySelector('.loading').addEventListener('transitionend', (e) => {
+		document.body.removeChild(e.currentTarget);
 	});
 })();
-	
