@@ -408,7 +408,6 @@
 			sceneArr[i].heightSize = window.innerHeight * sceneArr[i].heightMultiple;
 			sceneContainer.style.height = `${sceneArr[i].heightSize}px`;
 		}
-		// console.log(innerHeight);
 
 		let scrollYOffset = window.scrollY;
 		let pageHeight = 0;
@@ -447,11 +446,7 @@
 		so you have to multiple the original XPOS value reversely and apply the value to variables. */
 
 		const reSizedViewWidth = document.body.offsetWidth / reScaledRatio;
-		const reSizedViewHeight = window.innerHeight / reScaledRatio;
 
-		const reSizedSpace_W =
-			sceneArr[3].objs.canvas.width -
-			sceneArr[3].objs.canvas.width * reScaledRatio;
 		const reSizedSpace_H =
 			sceneArr[3].objs.canvas.height -
 			sceneArr[3].objs.canvas.height * reScaledRatio;
@@ -528,13 +523,11 @@
 		sceneArr[3].values.canvas_scale_effect[1] = canvas_end_scale;
 		sceneArr[3].values.canvas_scale_effect[2].start = canvas_scale_start;
 		sceneArr[3].values.canvas_scale_effect[2].end = canvas_scale_end;
-		// Canvas_scale_effect - End
 
 		// Canvas_after_scale -----------------------------------------
 		const fixed_scroll_ypos =
 			(canvas_scale_end - can_effect_end_ratio) * sceneArr[3].heightSize;
 		sceneArr[3].values.canvas_margin_top = fixed_scroll_ypos;
-		// Canvas_after_scle - end
 
 		// Caption(translateY, opacity) effect -------------------------------
 		const caption_start = canvas_scale_end;
@@ -543,7 +536,6 @@
 			sceneArr[3].values.caption_translateY[2].start = caption_start;
 		sceneArr[3].values.caption_opacity[2].end =
 			sceneArr[3].values.caption_translateY[2].end = caption_end;
-		// Caption(translateY, opacity) effect - end
 	};
 
 	const getCurrentSceneRatio = (currentScene) => {
@@ -553,7 +545,6 @@
 
 	const getCurrentfixedRatio = (currentScene) => {
 		// prevSceneOffset -> something wrong
-		console.log(currentScene, fixedOffsetY, prevSceneOffset);
 		const sceneHeight = sceneArr[currentScene].heightSize;
 		return (fixedOffsetY - prevSceneOffset) / sceneHeight;
 	};
@@ -855,7 +846,6 @@
 				}
 				break;
 			default:
-				console.log('playAnimation__switchError');
 		}
 	};
 
@@ -866,9 +856,7 @@
 		// This is because each area has a different height size.
 		for (let i = 0; i < currentScene; i++) {
 			prevSceneOffset += sceneArr[i].heightSize;
-			console.log(sceneArr[i].heightSize);
 		}
-		// console.log(fixedOffsetY);
 
 		// scrollY 값이 current scene height 값보다 클 때 scene이 이동했다는 의미 -> currentscene++
 		if (
@@ -884,7 +872,6 @@
 
 		if (Math.round(fixedOffsetY) < prevSceneOffset) {
 			// To prevent to the Bound effect from the mobile browser.
-			// console.log(fixedOffsetY);
 			if (Math.round(fixedOffsetY) === 0) return;
 
 			currentScene--;
@@ -894,13 +881,11 @@
 			return;
 		}
 		currentSceneScrollY = scrollY - prevSceneOffset;
-		//  console.log(currentSceneScrollY)
 		playAnimation();
 		rafId = requestAnimationFrame(loop);
 	};
 
 	const loadImage = () => {
-		console.log('img_loading');
 		// Scene 1: 300
 		for (let i = 0; i < IMG_COUNT.scene1; i++) {
 			const imgElem = new Image();
@@ -1009,22 +994,44 @@
 		document.body.classList.remove('before-loaded');
 		// after the Image is loaded, adding the Events to the page.
 
+		
 		window.addEventListener('resize', () => {
-			setSize();
-			sceneCheck();
+			window.location.reload();
 		});
-
+		
 		window.addEventListener('scroll', () => {
-			// console.log("scroll");
 			checkMenu();
 			if (!rafSt) {
 				rafId = requestAnimationFrame(loop);
 			}
 		});
-
+		
+		window.addEventListener('orientationchange', () => {
+			scrollTo(0, 0);
+			location.reload();
+		});
+		
 		setSize();
 		sceneCheck();
 		drawInitImage();
+
+		// if previous 'Scrolling value' is not (0, 0) it's possible that the Error is happening.
+		// so we have to use the 'Closer' trigger.
+		let reloadCount = 0;
+		let reloadTimeId = false;
+		let currentY = scrollY;
+
+		console.log(currentY);
+		if (scrollY !== 0) {
+			reloadTimeId = setInterval(() => {
+				currentY += 5;
+				console.log(currentY);
+				scrollTo(0, currentY);
+				reloadCount++;
+				currentY += 10;
+				if (reloadCount > 20) clearInterval(reloadTimeId);
+			}, 20);
+		}
 	});
 
 	document.querySelector('.loading').addEventListener('transitionend', (e) => {
